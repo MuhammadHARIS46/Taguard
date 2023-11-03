@@ -3,73 +3,59 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "./styles.css";
 import Logo from "../../assets/Background.svg";
-
-const Signup = () => {
+import { useSnackbar } from "notistack";
+import axios from "axios";
+const Login = () => {
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
   let navigate = useNavigate();
-  //   const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
 
-  //   const handleSubmit = async (e) => {
-  //     e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const { email, password } = credentials;
 
-  //     const { email, password } = credentials;
+    if (!email || !password) {
+      enqueueSnackbar("Please fill in both email and password fields", {
+        variant: "error",
+      });
 
-  //     if (!email || !password) {
-  //       enqueueSnackbar("Please fill in both email and password fields", {
-  //         variant: "error",
-  //       });
+      return;
+    }
+    try {
+      const response = await axios.get(
+        `https://mobile.careafox.com/api/login?username=${email}&password=${password}`
+      );
+      console.log("res:", response);
 
-  //       return;
-  //     }
-  //     if (password !== cPass) {
-  //       enqueueSnackbar("Passwords do not match", {
-  //         variant: "error",
-  //         autoHideDuration: 2000,
-  //       });
-  //       return;
-  //     }
-
-  //     try {
-  //       const response = await axios.post(
-  //         "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyCF7PiEm_qN4tI63oTqLo8KjP0lsk7SjLk",
-  //         {
-  //           email,
-  //           password,
-  //           returnSecureToken: true,
-  //         }
-  //       );
-
-  //       const data = response.data;
-
-  //       if (data.idToken) {
-  //         TokenService().updateToken(data.idToken);
-  //         navigate("/dashboard");
-  //         enqueueSnackbar("User created successfully", {
-  //           variant: "success",
-  //           autoHideDuration: 2000,
-  //         });
-  //       } else {
-  //         enqueueSnackbar("Invalid credentials", {
-  //           variant: "error",
-  //           autoHideDuration: 2000,
-  //         });
-  //       }
-  //     } catch (error) {
-  //       enqueueSnackbar("An error occurred", {
-  //         variant: "error",
-  //         autoHideDuration: 2000,
-  //       });
-  //     }
-  //   };
+      if (response.status === 200) {
+        localStorage.setItem("jwt", response.data.JWT);
+        navigate("/dashboard");
+        enqueueSnackbar("User logged in successfully", {
+          variant: "success",
+          autoHideDuration: 2000,
+        });
+      } else {
+        enqueueSnackbar("Invalid credentials", {
+          variant: "error",
+          autoHideDuration: 2000,
+        });
+      }
+    } catch (error) {
+      enqueueSnackbar("An error occurred", {
+        variant: "error",
+        autoHideDuration: 2000,
+      });
+      console.log(error);
+    }
+  };
 
   const onChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {};
 
   return (
     <>
@@ -113,7 +99,7 @@ const Signup = () => {
               Forgot password
             </p>
             {/* type="submit" */}
-            <button  className="signUpBtn" onClick={handleSubmit}>
+            <button className="signUpBtn" onClick={handleSubmit}>
               Login
             </button>
             <div className="noAccBox">
@@ -144,4 +130,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default Login;
