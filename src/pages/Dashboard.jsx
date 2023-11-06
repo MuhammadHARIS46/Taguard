@@ -1,10 +1,10 @@
 import React from "react";
-import GrafanaDashboard from "../components/dashboard/GrafanaDashboard";
-const GrafanaDashboardPage = () => {
+import Dashboard from "../components/dashboard/Dashboard";
+const DashboardPage = () => {
   return (
     <div>
-      <GrafanaDashboard />
+      <Dashboard />
     </div>
   );
 };
-export default GrafanaDashboardPage
+export default DashboardPage
