@@ -129,7 +129,7 @@ const HeatmapChart = () => {
   ];
 
   return (
-    <div>
+    <div className="chartWrap" id="chart">
       <ReactApexChart
         options={options}
         series={series}
