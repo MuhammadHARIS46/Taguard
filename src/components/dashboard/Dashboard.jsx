@@ -18,7 +18,7 @@ function Dashboard() {
         {
           headers: {
             Authorization:
-              "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE2OTkyNzcyNDIsImp0aSI6InB2NmZibEd3VC9sYkMyMlRsL2w0NFQxUXBzODNoS1JCZldEdkpJVzZ0Z0E9IiwiaXNzIjoibW9iaWxlLmNhcmVhZm94LmNvbSIsIm5iZiI6MTY5OTI3NzI0MiwiZXhwIjoxNjk5Mjc3ODQyLCJzZWN1cml0eSI6eyJ1c2VybmFtZSI6ImFua2l0IiwidXNlcmlkIjoiMTA5IiwicGFyZW50dXNlcmlkIjoiIiwidXNlcmxldmVsaWQiOjUwMCwicGVybWlzc2lvbiI6ZmFsc2V9fQ.njfbV0u5JCv4pB-yWVB3HIO56kZ9sEuNAb68LQYkcKf14mt7gYI5plv_Asmb6StzJ-eh_RToJiPVK4ickombAw",
+              `Bearer ${token}`,
           },
         }
       );
@@ -28,7 +28,7 @@ function Dashboard() {
     }
   };
   useEffect(() => {
-    // ListLocations();
+    ListLocations();
   }, []);
   const sideCardData = [
     {

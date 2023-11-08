@@ -5,6 +5,7 @@ import LoginPage from "./pages/Login";
 import DashboardPage from "./pages/Dashboard";
 import GrafanaDashbaordPage from "./pages/GrafanaDashboard";
 import SettingPage from "./pages/Settings";
+import NewPanelPage from "./pages/NewPanel"
 function App() {
   return (
     <React.Fragment>
@@ -14,6 +15,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/grafana-dashboard" element={<GrafanaDashbaordPage />} />
         <Route path="/setting" element={<SettingPage />} />
+        <Route path="/new-panel"  element={<NewPanelPage />} />
       </Routes>
     </React.Fragment>
   );
