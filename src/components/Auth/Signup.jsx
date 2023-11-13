@@ -132,7 +132,7 @@ const Signup = () => {
                 setCPass(e.target.value);
               }}
               name="password"
-              id="password"
+              id="password2"
               placeholder="Confirm password"
             />
             {/* type="submit" */}

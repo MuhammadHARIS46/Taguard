@@ -26,7 +26,7 @@ const Login = () => {
     }
     try {
       const response = await axios.get(
-        `https://mobile.careafox.com/api/login?username=${email}&password=${password}`
+        `https://mobile.careafox.com/api/login?username=${email}&password=${password}&expire=72000`
       );
       console.log("res:", response);
 

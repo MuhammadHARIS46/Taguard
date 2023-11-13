@@ -9,27 +9,27 @@ import DetailCard from "./DetailCard";
 import Search from "../../assets/Search.svg";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import mqtt from "mqtt";
 function Dashboard() {
-  const ListLocations = async () => {
-    const token = localStorage.getItem("jwt");
-    try {
-      const response = await axios.get(
-        "https://mobile.careafox.com/api/list/tblLocations",
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(response);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-  useEffect(() => {
-    ListLocations();
-  }, []);
+  // const ListLocations = async () => {
+  //   const token = localStorage.getItem("jwt");
+  //   try {
+  //     const response = await axios.get(
+  //       "https://mobile.careafox.com/api/list/view_user_db",
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log(response);
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
+  // useEffect(() => {
+  //   ListLocations();
+  // }, []);
   const sideCardData = [
     {
       city: "Mumbai",
@@ -71,6 +71,50 @@ function Dashboard() {
       c3Text: "40%",
     },
   ];
+  const username = "admin";
+  const password = "o99Y7YndJy0YwNlW3DkC9DZk0";
+  const brokerUrl = "ws://tag4track.com:8083/mqtt";
+
+  useEffect(() => {
+    const client = mqtt.connect(brokerUrl, {
+      clientId:"emqx_ODY3MD",
+      username: username,
+      password: password,
+    });
+
+    client.on("connect", () => {
+      console.log("Connected to MQTT broker");
+
+      const topic = "/MK107/58bf25314cf0/send";
+      const topic2 = "kbeacon/publish/94A408B91ABC";
+
+      client.subscribe(topic, (err) => {
+
+        if (!err) {
+          console.log(`Subscribed to topic: ${topic}`);
+        }
+      });
+      client.subscribe(topic2,(err)=>{
+        if(!err){
+          console.log(`Subscribed to topic: ${topic2}`);
+        }
+      })
+    });
+    
+    client.on("message", (topic, message) => {
+      console.log(`Received message on topic ${topic}: ${message.toString()}`);
+    });
+
+
+    client.on("error", (err) => {
+      console.error("MQTT error:", err);
+    });
+
+    return () => {
+      client.end();
+    };
+  }, []);
+
   return (
     <div className="dashboardMain">
       <div
