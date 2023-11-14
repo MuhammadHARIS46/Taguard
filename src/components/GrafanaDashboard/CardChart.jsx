@@ -1,7 +1,15 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
-
-const CardChart = ({ mac, temp, bgColor, sampleData, lineColor, areaColor }) => {
+import AirIcon from "@mui/icons-material/Air";
+const CardChart = ({
+  mac,
+  temp,
+  bgColor,
+  sampleData,
+  lineColor,
+  areaColor,
+  humidity,
+}) => {
   const options = {
     series: [
       {
@@ -12,7 +20,7 @@ const CardChart = ({ mac, temp, bgColor, sampleData, lineColor, areaColor }) => 
     chart: {
       type: "area",
       stacked: false,
-      height: 350,
+      // height: 350,
       zoom: {
         type: "x",
         enabled: true,
@@ -65,7 +73,7 @@ const CardChart = ({ mac, temp, bgColor, sampleData, lineColor, areaColor }) => 
   };
 
   return (
-    <div className="chartWrap" style={{ width: "300px", background: bgColor }}>
+    <div className="chartWrap" style={{ width: "220px", background: bgColor,height:"400px" }}>
       <div
         style={{
           padding: "5px",
@@ -88,13 +96,27 @@ const CardChart = ({ mac, temp, bgColor, sampleData, lineColor, areaColor }) => 
           {temp}
         </p>
       </div>
+      <div style={{
+        padding:"5px"
+      }}>
+        <AirIcon sx={{color:'white',fontSize:"50px"}} />
+        <p
+          style={{
+            fontSize: "25px",
+            fontWeight: 400,
+            color:"white"
+          }}
+        >
+          {humidity}
+        </p>
+      </div>
 
       <div id="chart">
         <ReactApexChart
           options={options}
           series={options.series}
           type="area"
-          height={options.chart.height}
+          // height={options.chart.height}
         />
       </div>
     </div>

@@ -7,7 +7,7 @@ import HeatmapChart from "./HeatMap";
 import CardChart from "./CardChart";
 import "./styles.css";
 import mqtt from "mqtt";
-import SingleLineChart from "./SingleLineChart"
+import SingleLineChart from "./SingleLineChart";
 const GrafanaDashbaord = () => {
   const username = "admin";
   const password = "o99Y7YndJy0YwNlW3DkC9DZk0";
@@ -93,8 +93,8 @@ const GrafanaDashbaord = () => {
             gap: "10px",
             marginBottom: "30px",
             alignItems: "center",
-            width:"100%",
-            flexWrap:"wrap"
+            width: "100%",
+            flexWrap: "wrap",
           }}
         >
           {topic?.slice(0, 6).map((i, index) => (
@@ -102,13 +102,14 @@ const GrafanaDashbaord = () => {
               <CardChart
                 mac={i.dmac}
                 temp={`${i.temp}°C`}
+                humidity={`${i.humidty}%`}
                 bgColor="#c26786"
                 lineColor="#e8d3da"
                 areaColor=" #e3b6c5"
                 sampleData={[
-                  [13279600000, 30.95],
-                  [-132746000000, 22.34],
-                  [1327400000, 12.18],
+                  [26, 30.95],
+                  [76, 22.34],
+                  [45, 12.18],
                 ]}
               />
             </div>
@@ -124,11 +125,12 @@ const GrafanaDashbaord = () => {
         >
           <HeatmapChart />
         </div>
-        <div          style={{
+        <div
+          style={{
             marginTop: "30px",
-          }}>
-        <SingleLineChart data={topic} />
-
+          }}
+        >
+          <SingleLineChart data={topic} />
         </div>
       </div>
     </div>
