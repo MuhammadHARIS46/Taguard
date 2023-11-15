@@ -73,52 +73,84 @@ const CardChart = ({
   };
 
   return (
-    <div className="chartWrap" style={{ width: "220px", background: bgColor,height:"400px" }}>
-      <div
+    <div
+      style={{
+        width: "220px",
+      }}
+    >
+      <button
         style={{
-          padding: "5px",
+          width: "220px",
         }}
       >
-        <p
+        Device_mac
+      </button>
+      <div
+        className="chartWrap"
+        style={{ background: bgColor, height: "400px" }}
+      >
+        <div
           style={{
-            fontSize: "25px",
-            fontWeight: 400,
+            padding: "5px",
           }}
         >
-          {mac}
-        </p>
-        <p
+          <p
+            style={{
+              fontSize: "25px",
+              fontWeight: 400,
+            }}
+          >
+            {mac}
+          </p>
+          <p
+            style={{
+              fontSize: "40px",
+              fontWeight: 600,
+            }}
+          >
+            {temp}
+          </p>
+        </div>
+        <div
           style={{
-            fontSize: "40px",
-            fontWeight: 600,
+            padding: "5px",
           }}
         >
-          {temp}
-        </p>
-      </div>
-      <div style={{
-        padding:"5px"
-      }}>
-        <AirIcon sx={{color:'white',fontSize:"50px"}} />
-        <p
-          style={{
-            fontSize: "25px",
-            fontWeight: 400,
-            color:"white"
-          }}
-        >
-          {humidity}
-        </p>
-      </div>
+          <AirIcon sx={{ color: "white", fontSize: "50px" }} />
+          <p
+            style={{
+              fontSize: "25px",
+              fontWeight: 400,
+              color: "white",
+            }}
+          >
+            {humidity}
+          </p>
+        </div>
 
-      <div id="chart">
-        <ReactApexChart
-          options={options}
-          series={options.series}
-          type="area"
-          // height={options.chart.height}
-        />
+        <div id="chart">
+          <ReactApexChart
+            options={options}
+            series={options.series}
+            type="area"
+            // height={options.chart.height}
+          />
+        </div>
       </div>
+      <button
+        style={{
+          width: "220px",
+        }}
+      >
+        QUEUE
+      </button>
+      <button
+        style={{
+          width: "220px",
+        }}
+      >
+        CONFIGURATION
+      </button>
     </div>
   );
 };
