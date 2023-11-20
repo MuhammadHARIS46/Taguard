@@ -15,12 +15,26 @@ const GrafanaDashbaord = () => {
   const brokerUrl = "ws://tag4track.com:8083/mqtt";
 
   const [topic, setTopic] = useState([]);
+  const token = localStorage.getItem("jwt")
   const historicData = async() =>{
     try{
       const response = await axios.get("https://tag4track.com/api/v1/general_h.php?start_time=-9h&token=cuK9CEh9rokte_1uDQXkushwbltnFfFHRXHOV3q1IO2_NgzPZMF2je8a6O73Y30_C46oYfTLq1_fP6sPhPnjrw==&device_mac=BC5729009415&bucket=general&end_time=-1s")
       console.log(response)
     }
     catch(err) {
+      console.log(err)
+    }
+  }
+  const getUserDbToken = async() =>{
+    try{
+      const res = await axios.get("http://localhost:3000/api/list/user_db_token",{
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      })
+      console.log("res",res)
+    }
+    catch(err){
       console.log(err)
     }
   }
@@ -63,7 +77,8 @@ const GrafanaDashbaord = () => {
     client.on("error", (err) => {
       console.error("MQTT error:", err);
     });
-    historicData()
+    // historicData()
+    getUserDbToken()
     return () => {
       client.end();
     };
