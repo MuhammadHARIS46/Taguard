@@ -27,18 +27,23 @@ const GrafanaDashbaord = () => {
       console.log(err)
     }
   }
-  const getUserDbToken = async() =>{
-    const jwt= localStorage.getItem("jwt")
-    try{
-      const res = await axios.get("http://localhost:3000/api/list/view_user_db",{
+  const getUserDbToken = async () => {
+    const jwt = localStorage.getItem("jwt");
+  
+    try {
+      const res = await axios.get("http://localhost:3000/api/list/view_user_db", {
         withCredentials: true,
-      })
-      console.log("res",res)
+        headers: {
+          'X-Authorization': jwt,
+          'accept': '*/*',
+        },
+      });
+  
+      console.log("res", res);
+    } catch (err) {
+      console.log(err);
     }
-    catch(err){
-      console.log(err)
-    }
-  }
+  };
   
   useEffect(() => {
     const client = mqtt.connect(brokerUrl, {
