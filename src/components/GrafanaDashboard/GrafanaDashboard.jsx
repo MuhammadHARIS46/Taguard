@@ -9,6 +9,8 @@ import "./styles.css";
 import mqtt from "mqtt";
 import SingleLineChart from "./SingleLineChart";
 import axios from "axios"
+import Cookies from 'js-cookie';
+
 const GrafanaDashbaord = () => {
   const username = "admin";
   const password = "o99Y7YndJy0YwNlW3DkC9DZk0";
@@ -26,11 +28,10 @@ const GrafanaDashbaord = () => {
     }
   }
   const getUserDbToken = async() =>{
+    const jwt= localStorage.getItem("jwt")
     try{
-      const res = await axios.get("http://localhost:3000/api/list/user_db_token",{
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
+      const res = await axios.get("http://localhost:3000/api/list/view_user_db",{
+        withCredentials: true,
       })
       console.log("res",res)
     }

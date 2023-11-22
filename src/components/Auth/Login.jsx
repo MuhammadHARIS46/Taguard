@@ -5,6 +5,7 @@ import "./styles.css";
 import Logo from "../../assets/Background.svg";
 import { useSnackbar } from "notistack";
 import axios from "axios";
+import Cookies from 'js-cookie';
 const Login = () => {
   const [credentials, setCredentials] = useState({
     email: "",
@@ -16,23 +17,31 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { email, password } = credentials;
-
+  
     if (!email || !password) {
       enqueueSnackbar("Please fill in both email and password fields", {
         variant: "error",
       });
-
+  
       return;
     }
+  
     try {
       const response = await axios.get(
         `http://localhost:3000/api/login?username=${email}&password=${password}&expire=72000`
       );
-      console.log("res:", response);
 
+  
+      console.log("res:", response);
+  
       if (response.status === 200) {
-        localStorage.setItem("jwt", response.data.JWT);
+        const jwt = response.data.JWT;
+        // const value = `careafoxtest_apiidkey[JWT]=${jwt}`
+        const expires = new Date(Date.now() + 86400 * 1000); // 1 day in milliseconds
+        Cookies.set("careafoxtest_apiidkey[JWT]",jwt,{expires:1, path:"/", domain:"localhost"})
+  localStorage.setItem('jwt',jwt)
         navigate("/dashboard");
+
         enqueueSnackbar("User logged in successfully", {
           variant: "success",
           autoHideDuration: 2000,

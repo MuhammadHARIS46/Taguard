@@ -16,6 +16,7 @@
     "@testing-library/user-event": "^13.5.0",
     "apexcharts": "^3.44.0",
     "axios": "^1.6.0",
+    "js-cookie": "^3.0.5",
     "mqtt": "^5.2.1",
     "notistack": "^3.0.1",
     "paho-mqtt": "^1.1.0",
