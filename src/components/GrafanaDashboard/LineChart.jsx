@@ -1,32 +1,159 @@
-import React from "react";
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState } from "react";
 import ReactApexChart from "react-apexcharts";
-import "./styles.css"
-const LineChart = () => {
+import axios from "axios";
+import { InfluxDB } from "@influxdata/influxdb-client";
 
+const LineChart = ({ prevData,interval }) => {
+  const [userDb, setUserDb] = useState([]);
+  const [groups, setGroups] = useState([]);
+
+  const tblSensorGroup = async () => {
+    const token = localStorage.getItem("jwt");
+    try {
+      const res = await axios.get(
+        "https://endpoint.careafox.com/api/list/tblSensorGroup",
+        {
+          headers: {
+            "X-Authorization": `${token}`,
+          },
+        }
+      );
+      setGroups(res?.data.tblSensorGroup);
+      console.log("tblSensorGroup", res?.data.tblSensorGroup);
+      return res;
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const viewUserDb = async () => {
+    const token = localStorage.getItem("jwt");
+    try {
+      const userDbResponse = await axios.get(
+        "https://endpoint.careafox.com/api/list/view_user_db",
+        {
+          headers: {
+            "X-Authorization": `${token}`,
+          },
+        }
+      );
+      console.log("userDB", userDbResponse.data.view_user_db);
+
+      const userDb = userDbResponse?.data?.view_user_db;
+
+      if (userDb && userDb.length > 0) {
+        const groupedDevices = groupDevicesByGroupId(userDb);
+        const queryPromises = [];
+
+        for (const groupId in groupedDevices) {
+          const devices = groupedDevices[groupId];
+          const groupQueryPromise = getGroupQueryPromise(devices);
+          queryPromises.push(groupQueryPromise);
+        }
+
+        const allResults = await Promise.all(queryPromises);
+        console.log("All results:", allResults);
+        setUserDb(allResults);
+      }
+
+      return userDbResponse;
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const groupDevicesByGroupId = (devices) => {
+    const groupedDevices = devices.reduce((groups, device) => {
+      const groupId = device.groupId;
+
+      if (!groups[groupId]) {
+        groups[groupId] = [];
+      }
+
+      groups[groupId].push(device);
+
+      return groups;
+    }, {});
+
+    return groupedDevices;
+  };
+
+  const getGroupQueryPromise = async (devices) => {
+    const queryPromises = devices.map((device) => {
+      const { device_mac, influx_server_url, influx_token, influx_org } =
+        device;
+
+      const query = `
+          from(bucket: "general")
+          |> range(start:${prevData}, stop: -1s)
+          |> filter(fn: (r) => r["_measurement"] == "mem")
+          |> filter(fn: (r) => r["_field"] == "device_temperature")
+          |> filter(fn: (r) => r["device_mac"] == "${device_mac}")
+          |> aggregateWindow(every: 15m, fn: mean, createEmpty: false)
+          |> yield(name: "mean")
+        `;
+
+      return new Promise(async (resolve, reject) => {
+        try {
+          const queryApi = await new InfluxDB({
+            url: influx_server_url,
+            token: influx_token,
+          }).getQueryApi(influx_org);
+
+          const resultData = [];
+
+          await queryApi.queryRows(query, {
+            next(row, tableMeta) {
+              const o = tableMeta.toObject(row);
+              resultData.push(o);
+            },
+            error(error) {
+              console.log(`Query failed for device ${device_mac}:`, error);
+              reject(error);
+            },
+            complete() {
+              console.log(`Query completed for device ${device_mac}`);
+              console.log(`Result data for device ${device_mac}:`, resultData);
+              resolve({
+                name: device_mac,
+                data: resultData.map((data) => ({
+                  x: new Date(data._time).toISOString(),
+                  y: data._value,
+                })),
+              });
+            },
+          });
+        } catch (error) {
+          console.error(
+            `Error in influxQuery for device ${device_mac}:`,
+            error
+          );
+          reject(error);
+        }
+      });
+    });
+
+    return Promise.all(queryPromises);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await tblSensorGroup();
+      await viewUserDb();
+    };
+
+    fetchData();
+
+    // const fetchDataInterval = setInterval(fetchData, interval);
+
+    // return () => clearInterval(fetchDataInterval);
+  }, [prevData]);
+
+  const seriesData = userDb ? userDb.flat() : [];
 
   const options = {
-    series: [
-      {
-        name: "Line 1",
-        data: [28, 29, 33, 36, 32, 32, 33],
-        color: "#77B6EA",
-      },
-      {
-        name: "Line 2",
-        data: [12, 11, 14, 18, 17, 13, 13],
-        color: "#545454",
-      },
-      {
-        name: "Line 3",
-        data: [15, 18, 22, 25, 29, 28, 26],
-        color: "red",
-      },
-      {
-        name: "Line 4",
-        data: [8, 10, 14, 16, 12, 15, 13],
-        color: "green",
-      },
-    ],
     chart: {
       height: 350,
       type: "line",
@@ -38,6 +165,9 @@ const LineChart = () => {
         blur: 10,
         opacity: 0.2,
       },
+      animations: {
+        enabled: false,
+      },
       toolbar: {
         show: true,
         tools: {
@@ -46,7 +176,7 @@ const LineChart = () => {
           zoomout: false,
           selection: false,
           pan: false,
-          reset:false
+          reset: false,
         },
       },
     },
@@ -55,6 +185,7 @@ const LineChart = () => {
     },
     stroke: {
       curve: "smooth",
+      width: 2,
     },
     title: {
       text: "Average High & Low Temperature",
@@ -68,20 +199,23 @@ const LineChart = () => {
       },
     },
     markers: {
-      size: 1,
+      size: 0,
     },
     xaxis: {
-      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-      title: {
-        text: "Month",
-      },
+      type: "datetime",
+      min: new Date(seriesData[0]?.data[0]?.x).getTime(),
     },
     yaxis: {
       title: {
         text: "Temperature",
       },
-      min: 5,
+      min: 1,
       max: 40,
+      labels: {
+        formatter: function (value) {
+          return value.toFixed(0);
+        },
+      },
     },
     legend: {
       position: "top",
@@ -90,16 +224,24 @@ const LineChart = () => {
       offsetY: -25,
       offsetX: -5,
     },
-  }
+    tooltip: {
+      x: {
+        format: "dd MMM yyyy HH:mm:ss",
+      },
+      y: {
+        formatter: function (value) {
+          return value;
+        },
+      },
+      shared: false,
+    },
+  };
 
   return (
     <div id="chart" className="chartWrap">
       <ReactApexChart
         options={options}
-        series={options.series.map((data) => ({
-          name: data.name,
-          data: data.data,
-        }))}
+        series={seriesData}
         type="line"
         height={350}
       />
@@ -108,3 +250,7 @@ const LineChart = () => {
 };
 
 export default LineChart;
+
+
+
+// http://fastapi.careafox.com:5000/rep

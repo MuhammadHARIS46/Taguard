@@ -19,12 +19,12 @@ const HeatmapChart = () => {
               {
                 from: 0,
                 to: 20,
-                color: '#FF5722', // Orange color
+                color: '#FF5722',
               },
               {
                 from: 21,
                 to: 50,
-                color: '#FFC107', // Yellow color
+                color: '#FFC107',
               },
               {
                 from: 51,

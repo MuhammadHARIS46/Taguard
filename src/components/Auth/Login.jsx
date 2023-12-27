@@ -28,10 +28,9 @@ const Login = () => {
 
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/login?username=${email}&password=${password}&expire=72000`
+        `https://endpoint.careafox.com/api/login?username=${email}&password=${password}&expire=72000`
       );
 
-      console.log("res:", response);
 
       if (response.status === 200) {
         const jwt = response.data.JWT;
