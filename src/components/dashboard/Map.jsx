@@ -23,7 +23,7 @@ const Map = () => {
   const mapCenter = arbitraryLocation;
 
   return (
-    <LoadScript googleMapsApiKey="AIzaSyBPPQmEQGocLTVSQl1g2mrTr2H5JIdw4wo">
+    <LoadScript googleMapsApiKey="">
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={mapCenter}
