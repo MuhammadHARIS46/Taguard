@@ -11,12 +11,34 @@ import Search from "../../assets/Search.svg";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { InfluxDB } from "@influxdata/influxdb-client";
+import Modal from "@mui/material/Modal";
+import Map from "./Map";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 function Dashboard() {
   const [groups, setGroups] = useState([]);
   const [mappedGroups, setMappedGroups] = useState([]);
   const [userDb, setUserDb] = useState([]);
   const [deviceMacs, setDeviceMacs] = useState([]);
+  const [data, setData] = useState([]);
+  const [date, setDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const token = localStorage.getItem("jwt");
+  const [open, setOpen] = React.useState(false);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+  const style = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    background: "white",
+    border: "2px solid #000",
+    boxShadow: 24,
+    padding: "10px",
+    height: "80vh",
+    width: "500px",
+  };
 
   const tblSensorGroup = async () => {
     try {
@@ -29,7 +51,7 @@ function Dashboard() {
         }
       );
       setGroups(res?.data.tblSensorGroup);
-      // console.log("tblSensorGroup", res?.data.tblSensorGroup);
+      console.log("tblSensorGroup", res?.data.tblSensorGroup);
       return res;
     } catch (err) {
       console.log(err);
@@ -47,7 +69,7 @@ function Dashboard() {
         }
       );
 
-      // console.log("device_mac", res?.data?.device_mac);
+      console.log("device_mac", res?.data?.device_mac);
       setDeviceMacs(res?.data?.device_mac);
     } catch (err) {
       console.log(err);
@@ -63,7 +85,7 @@ function Dashboard() {
           },
         }
       );
-      // console.log("userDB", userDbResponse.data.view_user_db);
+      console.log("userDB", userDbResponse.data.view_user_db);
       setUserDb(userDbResponse.data.view_user_db);
     } catch (err) {
       return err;
@@ -103,13 +125,26 @@ function Dashboard() {
               reject(error);
             },
             complete() {
-              // console.log(`Result data for device ${device_mac}:`, resultData);
+              // console.log('Result data:', resultData); // Add this line for debugging
+              const updatedData = resultData.map((data) => ({
+                x: new Date(data._time).toISOString(),
+                y: data._value,
+                start: data._start,
+                stop: data.stop,
+                time: data._time,
+              }));
+
+              setData((prevData) => [
+                ...prevData,
+                {
+                  name: device_mac,
+                  data: updatedData,
+                },
+              ]);
+
               resolve({
                 name: device_mac,
-                data: resultData.map((data) => ({
-                  x: new Date(data._time).toISOString(),
-                  y: data._value,
-                })),
+                data: updatedData,
               });
             },
           });
@@ -129,7 +164,7 @@ function Dashboard() {
   const updateMappedGroups = () => {
     const onlineDevices = new Set();
     const onlineDeviceMacs = new Set();
-
+//  deviceMac()
     getGroupQueryPromise().then((results) => {
       results.forEach((result) => {
         if (result.data.length > 0) {
@@ -140,33 +175,29 @@ function Dashboard() {
         }
       });
 
-      const updatedMappedGroups = groups.reduce((result, group) => {
-        const devicesInGroup = userDb.filter(
+      const updatedMappedGroups = groups.map((group) => {
+        const deviceMac = deviceMacs.filter(
           (device) => device.group_id === group.id
+        ) 
+        const devicesInGroup = userDb.filter(
+          (device) => device.group_id=== group.id
         );
+
         const onlineCount = devicesInGroup.filter((device) =>
           onlineDevices.has(device.device_mac)
         ).length;
         const offlineCount = devicesInGroup.length - onlineCount;
-        const macDevices = deviceMacs.filter(
-          (device) => device?.group_id === group.id
-        );
-        // console.log("macDevices,", macDevices);
-        // console.log("devicesInGroup,", devicesInGroup);
 
-        const groupWithDevices = {
+        return {
           group,
           deviceCount: devicesInGroup.length,
           onlineCount,
           offlineCount,
           devices: devicesInGroup,
-          deviceMacs: macDevices,
+          temperature: data,
+          deviceMacs: deviceMac,
         };
-
-        result.push(groupWithDevices);
-
-        return result;
-      }, []);
+      });
 
       setMappedGroups(updatedMappedGroups);
       setDeviceMacs(Array.from(onlineDeviceMacs));
@@ -175,244 +206,407 @@ function Dashboard() {
     });
   };
 
+  const getRandomTemperature = () => {
+    const minTemperature = 4;
+    const maxTemperature = 20;
+    const randomTemperature =
+      Math.random() * (maxTemperature - minTemperature) + minTemperature;
+    return randomTemperature.toFixed(2);
+  };
+  const getRandomHumidity = () => {
+    const minHumidity = 65;
+    const maxHumidity = 99;
+
+    const isDecimal = Math.random() < 0.3;
+
+    if (isDecimal) {
+      const randomHumidity =
+        Math.random() * (maxHumidity - minHumidity) + minHumidity;
+      return randomHumidity.toFixed(2);
+    } else {
+      const randomWholeNumber =
+        Math.floor(Math.random() * (maxHumidity - minHumidity + 1)) +
+        minHumidity;
+      return randomWholeNumber.toString();
+    }
+  };
+
   useEffect(() => {
-    tblSensorGroup()
-    deviceMac()
-    viewUserDb()
+    tblSensorGroup();
+    deviceMac();
+    viewUserDb();
   }, []);
   useEffect(() => {
-    updateMappedGroups()
-  }, []);
-  
+    updateMappedGroups();
+  }, [userDb]);
 
   return (
-    <div className="dashboardMain">
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "30px",
-        }}
-      >
-        <div className="search-container">
-          <img src={Search} alt="Search Icon" />
-          <input className="search-input" type="text" placeholder="Search" />
+    <>
+      <div className="dashboardMain">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "30px",
+          }}
+        >
+          <div className="search-container">
+            <img src={Search} alt="Search Icon" />
+            <input className="search-input" type="text" placeholder="Search" />
+          </div>
+          <div>
+            <button
+              style={{
+                padding: "5px",
+                borderRadius: "5px",
+                color: "white",
+                width: "120px",
+                fontSize: "17px",
+                background: "#2a7e8d",
+              }}
+              onClick={handleOpen}
+            >
+              Generate Pdf
+            </button>
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <DatePicker
+            showTimeSelect
+            timeInputLabel="Time:"
+            dateFormat="MM/dd/yyyy "
+            wrapperClassName="datePicker"
+            onChange={(date) => {
+              setDate(date);
+            }}
+            value={date}
+          />
+          <DatePicker
+            showTimeSelect
+            timeInputLabel="Time:"
+            dateFormat="MM/dd/yyyy h:mm aa"
+            wrapperClassName="datePicker"
+            onChange={(date) => {
+              setEndDate(date);
+            }}
+            value={endDate}
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            console.log("date", date, endDate);
+          }}
+        >
+          hi
+        </button>
+        <div
+          style={{
+            display: "flex",
+          }}
+        >
+          <div className="cardsWrapper">
+            <div className="cardGrid">
+              <Card
+                bgImg={SampleBg}
+                name="Haris"
+                time="9999"
+                ProfileImg={SampleUser}
+                Loc="Jaipur"
+              />
+              <Card
+                bgImg={SampleBg}
+                name="Haris"
+                time="9999"
+                ProfileImg={SampleUser}
+                Loc="Jaipur"
+              />
+              <Card
+                bgImg={SampleBg}
+                name="Haris"
+                time="9999"
+                ProfileImg={SampleUser}
+                Loc="Jaipur"
+              />
+            </div>
+            <Map />
+            {mappedGroups?.map((group, index) => (
+              <div key={index + 2}>
+                <p
+                  key={index}
+                  style={{
+                    background: "black",
+                    color: "white",
+                    padding: "5px",
+                    borderRadius: "5px",
+                  }}
+                >
+                  {group.group.groupName}
+                </p>
+                <div className="cardGrid">
+                  {group?.deviceMacs
+                    ?.slice(0, group.onlineCount)
+                    ?.map((device, index) => (
+                      <DetailCard
+                        key={index}
+                        deviceNo={device.device_mac}
+                        city={"Nerul"}
+                        Ip={device.device_name}
+                        temp={getRandomTemperature()}
+                        humidity={getRandomHumidity()}
+                        ProfileImg={SampleUser}
+                        status="Active"
+                        lastSeen={
+                          device.last_updated
+                            ? new Date(device.last_updated).toLocaleDateString(
+                                "en-US",
+                                {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                }
+                              )
+                            : "Not available"
+                        }
+                        time={
+                          device.last_updated
+                            ? new Date(device.last_updated).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  timeZone: "Asia/Kolkata", // Set the time zone to GMT+5:30
+                                  hour12: false, // Use 24-hour format
+                                }
+                              )
+                            : "Not available"
+                        }
+                      />
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="sideCard">
+            {mappedGroups?.map((i, index) => (
+              <div className="sideCardContentWrapper" key={index}>
+                <p>{i?.group?.groupName}</p>
+                <div className="sideCarddetailWrap">
+                  <div className="spaceBet">
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "white",
+                      }}
+                    >
+                      Online
+                    </p>
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "#D9DBE9",
+                      }}
+                    >
+                      {i.onlineCount}
+                    </p>
+                  </div>
+                  <div className="spaceBet">
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "white",
+                      }}
+                    >
+                      Offline
+                    </p>
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "#D9DBE9",
+                      }}
+                    >
+                      {i.offlineCount}
+                    </p>
+                  </div>
+                  <div className="spaceBet">
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "white",
+                      }}
+                    >
+                      Breaches
+                    </p>
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "#D9DBE9",
+                      }}
+                    >
+                      340
+                    </p>
+                  </div>
+                  <div className="spaceBet">
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "white",
+                      }}
+                    >
+                      Alerts
+                    </p>
+                    <p
+                      className="sidecardContentTypo"
+                      style={{
+                        color: "#D9DBE9",
+                      }}
+                    >
+                      234
+                    </p>
+                  </div>
+                </div>
+                <div className="circularbarWrap">
+                  <div className="barAndTypoWrap">
+                    <CircularProgressbar
+                      value="22"
+                      text="22"
+                      styles={buildStyles({
+                        rotation: 0.25,
+                        strokeLinecap: "butt",
+                        textSize: "24px",
+                        pathTransitionDuration: 0.5,
+                        pathColor: `#287287B`,
+                        textColor: "white",
+                        trailColor: "#ED2E7E",
+                      })}
+                    />
+                    <p>RACK1</p>
+                  </div>
+                  <div className="barAndTypoWrap">
+                    <CircularProgressbar
+                      value="22"
+                      text="22"
+                      styles={buildStyles({
+                        rotation: 0.25,
+                        strokeLinecap: "butt",
+                        textSize: "24px",
+                        pathTransitionDuration: 0.5,
+                        pathColor: "white",
+                        textColor: "white",
+                        trailColor: "#6E7191",
+                      })}
+                    />
+                    <p>RACK2</p>
+                  </div>
+                  <div className="barAndTypoWrap">
+                    <CircularProgressbar
+                      value="22"
+                      text="22"
+                      styles={buildStyles({
+                        rotation: 0.25,
+                        strokeLinecap: "butt",
+                        textSize: "24px",
+                        pathTransitionDuration: 0.5,
+                        pathColor: "white",
+                        textColor: "white",
+                        trailColor: "#6E7191",
+                      })}
+                    />
+                    <p>LOWER DECK</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-        }}
+
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
       >
-        <div className="cardsWrapper">
-          <div className="cardGrid">
-            <Card
-              bgImg={SampleBg}
-              name="Haris"
-              time="9999"
-              ProfileImg={SampleUser}
-              Loc="Jaipur"
-            />
-            <Card
-              bgImg={SampleBg}
-              name="Haris"
-              time="9999"
-              ProfileImg={SampleUser}
-              Loc="Jaipur"
-            />
-            <Card
-              bgImg={SampleBg}
-              name="Haris"
-              time="9999"
-              ProfileImg={SampleUser}
-              Loc="Jaipur"
-            />
-          </div>
-          {mappedGroups?.map((group, index) => (
-            <div key={index + 2}>
-              <p
-                key={index}
+        <div style={style}>
+          <div
+            style={{
+              display: "flex",
+              gap: "20px",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              height: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                // alignItems: "center",
+                gap: "20px",
+                flexDirection: "column",
+              }}
+            >
+              <input
                 style={{
-                  background: "black",
-                  color: "white",
+                  height: "2.5em",
+                }}
+              />
+              <lable>To:</lable>
+              <input
+                type="date"
+                style={{
+                  height: "2.5em",
+                }}
+              />
+              <lable>From:</lable>
+              <input
+                type="date"
+                style={{
+                  height: "2.5em",
+                }}
+              />
+              <select
+                id="fruitSelector"
+                name="fruits"
+                style={{
+                  height: "2.5em",
+                }}
+                value=""
+              >
+                <option value="apple">Bc45uwhbw7w</option>
+                <option value="banana">Bc6ggwtwh</option>
+                <option value="orange">vg67890oi99</option>{" "}
+              </select>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "end",
+                justifyContent: "end",
+              }}
+            >
+              <button
+                style={{
                   padding: "5px",
                   borderRadius: "5px",
+                  color: "white",
+                  width: "120px",
+                  fontSize: "17px",
+                  background: "#2a7e8d",
                 }}
               >
-                {group.group.groupName}
-              </p>
-              <div className="cardGrid">
-                {group?.devices?.map((device, index) => (
-                  <DetailCard
-                    key={index}
-                    deviceNo={device.device_mac}
-                    city={device.location_name}
-                    Ip={device.device_name}
-                    temp={
-                      device.device_temperature === null
-                        ? "Not available"
-                        : device.device_temperature
-                    }
-                    humidity={
-                      device.device_humidity === null
-                        ? "Not available"
-                        : device.device_humidity
-                    }
-                    ProfileImg={SampleUser}
-                    lastSeen={
-                      device.last_updated
-                        // ? new Date(device.last_updated).toLocaleDateString(
-                        //     "en-US",
-                        //     {
-                        //       day: "numeric",
-                        //       month: "long",
-                        //       year: "numeric",
-                        //     }
-                        //   )
-                        // : "Not available"
-                    }
-                  />
-                ))}
-              </div>
+                Submit
+              </button>
             </div>
-          ))}
-
+          </div>
         </div>
-
-        <div className="sideCard">
-          {mappedGroups?.map((i, index) => (
-            <div className="sideCardContentWrapper" key={index}>
-              <p>{i?.group?.groupName}</p>
-              <div className="sideCarddetailWrap">
-                <div className="spaceBet">
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "white",
-                    }}
-                  >
-                    Online
-                  </p>
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "#D9DBE9",
-                    }}
-                  >
-                    {i.onlineCount}
-                  </p>
-                </div>
-                <div className="spaceBet">
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "white",
-                    }}
-                  >
-                    Offline
-                  </p>
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "#D9DBE9",
-                    }}
-                  >
-                    {i.offlineCount}
-                  </p>
-                </div>
-                <div className="spaceBet">
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "white",
-                    }}
-                  >
-                    Breaches
-                  </p>
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "#D9DBE9",
-                    }}
-                  >
-                    340
-                  </p>
-                </div>
-                <div className="spaceBet">
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "white",
-                    }}
-                  >
-                    Alerts
-                  </p>
-                  <p
-                    className="sidecardContentTypo"
-                    style={{
-                      color: "#D9DBE9",
-                    }}
-                  >
-                    234
-                  </p>
-                </div>
-              </div>
-              <div className="circularbarWrap">
-                <div className="barAndTypoWrap">
-                  <CircularProgressbar
-                    value="22"
-                    text="22"
-                    styles={buildStyles({
-                      rotation: 0.25,
-                      strokeLinecap: "butt",
-                      textSize: "24px",
-                      pathTransitionDuration: 0.5,
-                      pathColor: `#287287B`,
-                      textColor: "white",
-                      trailColor: "#ED2E7E",
-                    })}
-                  />
-                  <p>RACK1</p>
-                </div>
-                <div className="barAndTypoWrap">
-                  <CircularProgressbar
-                    value="22"
-                    text="22"
-                    styles={buildStyles({
-                      rotation: 0.25,
-                      strokeLinecap: "butt",
-                      textSize: "24px",
-                      pathTransitionDuration: 0.5,
-                      pathColor: "white",
-                      textColor: "white",
-                      trailColor: "#6E7191",
-                    })}
-                  />
-                  <p>RACK2</p>
-                </div>
-                <div className="barAndTypoWrap">
-                  <CircularProgressbar
-                    value="22"
-                    text="22"
-                    styles={buildStyles({
-                      rotation: 0.25,
-                      strokeLinecap: "butt",
-                      textSize: "24px",
-                      pathTransitionDuration: 0.5,
-                      pathColor: "white",
-                      textColor: "white",
-                      trailColor: "#6E7191",
-                    })}
-                  />
-                  <p>LOWER DECK</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      </Modal>
+    </>
   );
 }
 
